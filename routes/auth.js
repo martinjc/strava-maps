@@ -19,8 +19,9 @@ router.get('/', async function(req, res) {
         payload = await s.athlete.get({})
         console.log(payload);
         console.log('done');
+        res.render('index', { title: 'Express', user: payload });
     } 
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: 'Express', user: undefined });
 });
 
 module.exports = router;
