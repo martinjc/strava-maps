@@ -3,13 +3,38 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var passport = require('passport');
+var session = require('express-session');
 
 const strava = require('strava-v3');
-const credentials = require('./credentials');
+const stravaAuth = require('passport-strava-oauth2').Strategy;
+const stravaCredentials = require('./credentials').stravaConfig;
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var authRouter = require('./routes/auth');
+const { stravaConfig } = require('./credentials');
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+})
+
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+}); 
+
+passport.use(new stravaAuth({
+    clientID: stravaConfig.client_id,
+    clientSecret: stravaConfig.client_secret,
+    callbackURL: stravaConfig.redirect_uri
+  },
+  function(accessToken, refreshToken, profile, done) {
+    process.nextTick(function() {
+      return done(null, profile);
+    });
+  }
+));
+
 
 var app = express();
 
@@ -21,13 +46,14 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(session({ secret: 'no secret'}));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/auth', authRouter);
-
-strava.config(credentials.stravaConfig);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -44,5 +70,10 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+function ensureAuthenticated(req, res, next) {
+  if(req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
+}
 
 module.exports = app;
