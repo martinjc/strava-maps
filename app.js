@@ -2,6 +2,8 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
+var methodOverride = require('method-override');
+var bodyParser = require('body-parser');
 var logger = require('morgan');
 var passport = require('passport');
 var session = require('express-session');
@@ -30,6 +32,7 @@ passport.use(new stravaAuth({
   },
   function(accessToken, refreshToken, profile, done) {
     process.nextTick(function() {
+      console.log(accessToken, refreshToken, profile)
       return done(null, profile);
     });
   }
@@ -46,6 +49,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(methodOverride());
 app.use(session({ secret: 'no secret'}));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -68,7 +72,7 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.render('error', {message: err.message, error: err});
 });
 
 function ensureAuthenticated(req, res, next) {
