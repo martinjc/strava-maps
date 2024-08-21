@@ -3,7 +3,6 @@ var router = express.Router();
 var passport = require('passport');
 
 const stravaAuth = require('passport-strava-oauth2').Strategy;
-const strava = require('strava-v3');
 const stravaConfig = require('./../credentials').stravaConfig;
 
 passport.use(new stravaAuth({
