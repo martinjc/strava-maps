@@ -1,27 +1,37 @@
 var express = require('express');
 var router = express.Router();
+var passport = require('passport');
 
+const stravaAuth = require('passport-strava-oauth2').Strategy;
 const strava = require('strava-v3');
-const credentials = require('./../credentials');
+const stravaConfig = require('./../credentials').stravaConfig;
 
-strava.config(credentials.stravaConfig);
+passport.use(new stravaAuth({
+  clientID: stravaConfig.client_id,
+  clientSecret: stravaConfig.client_secret,
+  callbackURL: stravaConfig.redirect_uri
+},
+function(accessToken, refreshToken, profile, done) {
+  process.nextTick(function() {
+    return done(null, profile);
+  });
+}
+));
 
-/* GET home page. */
-router.get('/', async function(req, res) {
-    // if query has code parameter, we're in the middle of oauth
-    if(req.query.code) {
-        let payload = await strava.oauth.getToken(req.query.code);
-        let creds = credentials.stravaConfig;
-        creds.access_token = payload.access_token;
-        console.log(creds);
-        s = new strava.client(payload.access_token);
-        console.log(s);
-        payload = await s.athlete.get({})
-        console.log(payload);
-        console.log('done');
-        res.render('index', { title: 'Express', user: payload });
-    } 
-  res.render('index', { title: 'Express', user: undefined });
+router.get('/', passport.authenticate('strava', {scope: ['activity:read_all,profile:read_all']}), function(req, res) {
+});
+
+router.get('/callback',
+  passport.authenticate('strava', { failureRedirect: '/' }),
+  function(req, res) {
+    console.log(req.user);
+    res.redirect('../');
+});
+
+router.get('/logout',
+  function(req, res) {
+    req.logout();
+    res.redirect('../');
 });
 
 module.exports = router;

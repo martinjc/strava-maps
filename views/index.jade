@@ -6,7 +6,8 @@ block content
 
 
   if user
-    #{user}
-  p
-    a(href='https://www.strava.com/oauth/authorize?client_id=9007&response_type=code&redirect_uri=http://127.0.0.1:3000/auth/&approval_prompt=force&scope=activity:read_all,profile:read_all') 
-      img(src='/images/btn_strava_connectwith_orange.png')
+    h1 welcome #{user.displayName}
+  else 
+    p
+      a(href='/auth') 
+        img(src='/images/btn_strava_connectwith_orange.png')
