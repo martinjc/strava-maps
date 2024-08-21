@@ -4,8 +4,10 @@ block content
   h1= title
   p Welcome to #{title}
 
-  #{user}
 
-  p
-    a(href='/auth') 
-      img(src='/images/btn_strava_connectwith_orange.png')
+  if user
+    h1 welcome #{user.displayName}
+  else 
+    p
+      a(href='/auth') 
+        img(src='/images/btn_strava_connectwith_orange.png')

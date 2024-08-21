@@ -26,13 +26,13 @@ router.get('/callback',
   passport.authenticate('strava', { failureRedirect: '/' }),
   function(req, res) {
     console.log(req.user);
-    res.render('hello world');
+    res.redirect('../');
 });
 
 router.get('/logout',
   function(req, res) {
     req.logout();
-    req.redirect('../');
+    res.redirect('../');
 });
 
 module.exports = router;
