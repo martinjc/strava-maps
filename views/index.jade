@@ -7,6 +7,9 @@ block content
 
   if user
     h1 welcome #{user.displayName}
+    ul
+      each activity in activities
+        li #{activity.start_date} #{activity.name} #{activity.distance}m
   else 
     p
       a(href='/auth') 
