@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="lib/polyline/polyline.js"></script>
+    <title>Strava Maps - All routes</title>
+</head>
+<body>
+    <div class="routes">
+
+    </div>
+    <script>
+        (function() {
+
+            // a bounding box, it'll do for now. 
+            let cardiff = [[-3.3201075665786277, 51.38382882236036], [-3.070876006763464, 51.55066401386628]];
+
+            let cardiffBox = {
+                type: 'MultiPoint',
+                coordinates: cardiff
+            }
+            let projection = d3.geoMercator();
+            let geo = d3.geoPath().projection(projection);
+            projection.fitSize([500, 500], cardiffBox);
+            let routeBox = d3.select('.routes');
+
+            function drawRoutes(runs, year) {
+
+                let yearBox = routeBox.append('div')
+                    .attr('class', 'year')
+
+                yearBox.append('h1')
+                    .text(`Year: ${year}`);
+
+                let routeSVG = yearBox.append('svg')
+                    .attr('width', 500)
+                    .attr('height', 500)
+
+                let runRoutes = {
+                    type: 'MultiLineString',
+                    coordinates: runs.features.map(run => {
+                        return run.coordinates;
+                    })
+                };
+
+                routeSVG.selectAll('path')
+                    .data(runs.features)
+                    .join('path')
+                    .attr('d', geo)
+                    .attr('fill', 'none')
+                    .attr('stroke', 'green')
+                    .attr('stroke-width', 1);
+
+            }
+
+            fetch('/data/activities.json')
+                .then(response => response.json())
+                .then(data => {
+                    let runs = data.filter(activity => activity.type === 'Run');
+                    
+                    for (let year = 2011; year <= 2025; year++) {
+                        let count = 0;
+                        let thisYearsRuns = {type: 'FeatureCollection', features: []};
+                        runs.forEach(run => {
+                            let runDate = new Date(run.start_date);
+                            if(runDate.getFullYear() === year) {
+                                let mapline = run.map.summary_polyline;
+                                // Decode the polyline
+                                let route = polyline.toGeoJSON(mapline);
+                                if(route.coordinates.length > 0) {
+                                    if(route.coordinates.some((coord) => {
+                                        return coord[0] >= cardiff[0][0] && coord[0] <= cardiff[1][0] &&
+                                            coord[1] >= cardiff[0][1] && coord[1] <= cardiff[1][1];
+                                    })) {
+                                        count++;
+                                        thisYearsRuns.features.push(route);
+                                    }
+                                }
+                            }
+                        });
+                        drawRoutes(thisYearsRuns, year);
+                        console.log(year, count);
+                    }
+
+                });
+        })();
+    </script>
+</body>
+</html>

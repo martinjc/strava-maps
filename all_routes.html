@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="lib/polyline/polyline.js"></script>
+    <title>Strava Maps - All routes</title>
+</head>
+<body>
+    <div class="routes">
+
+    </div>
+    <script>
+        (function() {
+
+            let projection = d3.geoMercator();
+            let geo = d3.geoPath().projection(projection);
+
+            function drawRoute(run, route) {
+                let routeBox = d3.select('.routes')
+                let routeSVG = routeBox.append('svg')
+                    .attr('width', 50)
+                    .attr('height', 50)
+                    .attr('id', `svg_${run.id}`)
+
+                console.log(route, d3.geoBounds(route));
+
+                projection.fitSize([50, 50], route);
+
+                routeSVG.selectAll('path')
+                    .data([route])
+                    .enter().append('path')
+                    .attr('d', geo)
+                    .attr('fill', 'none')
+                    .attr('stroke', 'green')
+                    .attr('stroke-width', 1);
+
+            }
+
+            fetch('/data/activities.json')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    let runs = data.filter(activity => activity.type === 'Run');
+                    console.log(runs);
+                    let totalDistance = runs.reduce((sum, run) => sum + run.distance, 0);
+                    console.log(`Total distance: ${totalDistance/1000} kilometers`);
+                    let totalTime = runs.reduce((sum, run) => sum + run.moving_time, 0);
+                    console.log(`Total time: ${totalTime/60} minutes`);
+                    let count = 0;
+                    runs.forEach(run => {
+                        let mapline = run.map.summary_polyline;
+                        console.log(`Run ID: ${run.id}, Mapline: ${mapline}`);
+                        // Decode the polyline
+                        let route = polyline.toGeoJSON(mapline);
+                        console.log(`Run ID: ${run.id}, Route:`, route);
+                        if(route.coordinates.length > 0) {
+                            drawRoute(run, route);
+                            count++;
+                        }
+                    });
+                    console.log(count);
+                });
+        })();
+    </script>
+</body>
+</html>
