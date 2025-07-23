@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="lib/polyline/polyline.js"></script>
+    <title>Strava Maps - All routes</title>
+</head>
+<body>
+    <div class="routes">
+
+    </div>
+    <script>
+        (function() {
+
+            let cardiff = [[-3.32322, 51.38586], [-3.14065, 51.51634]];
+
+            let projection = d3.geoMercator();
+            let geo = d3.geoPath().projection(projection);
+            let routeBox = d3.select('.routes');
+
+            let routeSVG = routeBox.append('svg')
+                    .attr('width', 500)
+                    .attr('height', 500)
+
+            function drawRoutes(runs) {
+
+                let runRoutes = {
+                    type: 'MultiLineString',
+                    coordinates: runs.features.map(run => {
+                        return run.coordinates;
+                    })
+                };
+
+                console.log(d3.geoBounds(runRoutes));
+
+                projection.fitSize([500, 500], runRoutes);
+
+                routeSVG.selectAll('path')
+                    .data(runs.features)
+                    .join('path')
+                    .attr('d', geo)
+                    .attr('fill', 'none')
+                    .attr('stroke', 'green')
+                    .attr('stroke-width', 1);
+
+            }
+
+            fetch('/data/activities.json')
+                .then(response => response.json())
+                .then(data => {
+                    let runs = data.filter(activity => activity.type === 'Run');
+                    let count = 0;
+                    let runsInCardiff = {type: 'FeatureCollection', features: []};
+                    runs.forEach(run => {
+                        let mapline = run.map.summary_polyline;
+                        // Decode the polyline
+                        let route = polyline.toGeoJSON(mapline);
+                        if(route.coordinates.length > 0) {
+                            if(route.coordinates.some((coord) => {
+                                return coord[0] >= cardiff[0][0] && coord[0] <= cardiff[1][0] &&
+                                    coord[1] >= cardiff[0][1] && coord[1] <= cardiff[1][1];
+                            })) {
+                                count++;
+                                runsInCardiff.features.push(route);
+                            }
+                        }
+                    });
+                    drawRoutes(runsInCardiff);
+                    console.log(count);
+                });
+        })();
+    </script>
+</body>
+</html>

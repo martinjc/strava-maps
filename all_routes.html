@@ -24,37 +24,27 @@
                     .attr('height', 50)
                     .attr('id', `svg_${run.id}`)
 
-                console.log(route, d3.geoBounds(route));
-
                 projection.fitSize([50, 50], route);
 
                 routeSVG.selectAll('path')
                     .data([route])
-                    .enter().append('path')
-                    .attr('d', geo)
-                    .attr('fill', 'none')
-                    .attr('stroke', 'green')
-                    .attr('stroke-width', 1);
-
+                    .join((enter) => {
+                        enter.append('path')
+                            .attr('d', geo)
+                            .attr('fill', 'none')
+                            .attr('stroke', 'green')
+                            .attr('stroke-width', 1);
+                    });
             }
 
             fetch('/data/activities.json')
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data);
                     let runs = data.filter(activity => activity.type === 'Run');
-                    console.log(runs);
-                    let totalDistance = runs.reduce((sum, run) => sum + run.distance, 0);
-                    console.log(`Total distance: ${totalDistance/1000} kilometers`);
-                    let totalTime = runs.reduce((sum, run) => sum + run.moving_time, 0);
-                    console.log(`Total time: ${totalTime/60} minutes`);
                     let count = 0;
                     runs.forEach(run => {
                         let mapline = run.map.summary_polyline;
-                        console.log(`Run ID: ${run.id}, Mapline: ${mapline}`);
-                        // Decode the polyline
                         let route = polyline.toGeoJSON(mapline);
-                        console.log(`Run ID: ${run.id}, Route:`, route);
                         if(route.coordinates.length > 0) {
                             drawRoute(run, route);
                             count++;

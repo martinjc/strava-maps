@@ -13,6 +13,7 @@
     </div>
     <script>
         (function() {
+
             let cardiff = [[-3.32322, 51.38586], [-3.14065, 51.51634]];
 
             let cardiffBox = {
@@ -43,16 +44,24 @@
                     })
                 };
 
-                routeSVG.selectAll('path')
+                let paths = routeSVG.selectAll('path')
                     .data(runs.features)
-                    .join((enter) => 
+                    .join((enter) => {
                         enter.append('path')
                             .attr('d', geo)
                             .attr('fill', 'none')
                             .attr('stroke', 'green')
                             .attr('stroke-width', 1)
-                    );
+                            .style("stroke-dasharray", (d, i, j) => d3.select(j[i]).node().getTotalLength() + " " + d3.select(j[i]).node().getTotalLength())
+                            .style("stroke-dashoffset", (d, i, j) => d3.select(j[i]).node().getTotalLength())
+                    });
 
+                d3.selectAll('path')
+                    .transition()
+                    .duration(100)
+                    .delay((d, i) => i * 100)
+                    .ease(d3.easeLinear)
+                    .style("stroke-dashoffset", 0);
             }
 
             fetch('/data/activities.json')
@@ -67,7 +76,6 @@
                             let runDate = new Date(run.start_date);
                             if(runDate.getFullYear() === year) {
                                 let mapline = run.map.summary_polyline;
-                                // Decode the polyline
                                 let route = polyline.toGeoJSON(mapline);
                                 if(route.coordinates.length > 0) {
                                     if(route.coordinates.some((coord) => {
@@ -83,7 +91,6 @@
                         drawRoutes(thisYearsRuns, year);
                         console.log(year, count);
                     }
-
                 });
         })();
     </script>
